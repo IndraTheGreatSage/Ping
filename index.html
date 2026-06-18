@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pantau Ping - ISP Indonesia Latency Tracker</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .header-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+        }
+
+        h1 {
+            font-size: 24px;
+            color: #333;
+        }
+
+        .subtitle {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .live-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: #10b981;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            background: white;
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .isp-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .isp-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: white;
+            font-size: 14px;
+        }
+
+        .isp-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .isp-btn.active {
+            ring: 3px solid rgba(0, 0, 0, 0.3);
+            transform: scale(1.05);
+        }
+
+        .server-toggle {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .toggle-btn {
+            padding: 10px 20px;
+            border: 2px solid #667eea;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .toggle-btn.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .server-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+        }
+
+        .server-btn {
+            padding: 12px;
+            border: 2px solid #e5e7eb;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.3s;
+            text-align: center;
+        }
+
+        .server-btn:hover {
+            border-color: #667eea;
+            background: #f0f4ff;
+        }
+
+        .server-btn.active {
+            border-color: #667eea;
+            background: #667eea;
+            color: white;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            border-radius: 12px;
+            color: white;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+        }
+
+        .stat-trend {
+            font-size: 12px;
+            margin-top: 5px;
+            opacity: 0.8;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-top: 15px;
+        }
+
+        .test-section {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+
+        .test-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .test-btn {
+            padding: 12px 24px;
+            background: white;
+            color: #f5576c;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .test-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .test-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .test-results {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .result-item {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .result-value {
+            font-size: 28px;
+            font-weight: 700;
+        }
+
+        .result-label {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+
+        .info-section {
+            background: rgba(255, 255, 255, 0.95);
+        }
+
+        .info-text {
+            font-size: 14px;
+            color: #666;
+            line-height: 1.6;
+        }
+
+        .tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 15px;
+        }
+
+        .tag {
+            padding: 6px 12px;
+            background: #667eea;
+            color: white;
+            border-radius: 20px;
+            font-size: 12px;
+        }
+
+        footer {
+            text-align: center;
+            padding: 20px;
+            color: white;
+            font-size: 14px;
+        }
+
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .test-results {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header>
+            <div class="header-content">
+                <div class="logo">
+                    <div class="logo-icon">📊</div>
+                    <div>
+                        <h1>Pantau Ping</h1>
+                        <p class="subtitle">ISP Indonesia Latency Tracker</p>
+                    </div>
+                </div>
+                <div class="live-badge">
+                    <div class="live-dot"></div>
+                    <span>Real-time Monitoring</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- ISP Selection -->
+        <div class="card">
+            <h2 class="section-title">Pilih ISP</h2>
+            <div class="isp-buttons" id="ispButtons"></div>
+        </div>
+
+        <!-- Server Selection -->
+        <div class="card">
+            <h2 class="section-title">Pilih Server</h2>
+            <div class="server-toggle">
+                <button class="toggle-btn active" data-type="game">🎮 Game Servers</button>
+                <button class="toggle-btn" data-type="work">💼 Work Servers</button>
+            </div>
+            <div class="server-grid" id="serverGrid"></div>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="card">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Rata-rata Ping</div>
+                    <div class="stat-value" id="avgPing">--</div>
+                    <div class="stat-trend">Last 4 hours</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Ping Tertinggi</div>
+                    <div class="stat-value" id="maxPing">--</div>
+                    <div class="stat-trend">Peak performance</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Packet Loss</div>
+                    <div class="stat-value" id="packetLoss">--</div>
+                    <div class="stat-trend">Connection quality</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chart -->
+        <div class="card">
+            <h2 class="section-title" id="chartTitle">Indihome → Valorant Singapore</h2>
+            <div class="chart-container">
+                <canvas id="pingChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Connection Test -->
+        <div class="card test-section">
+            <div class="test-header">
+                <h2 class="section-title" style="color: white;">Test Koneksi Anda</h2>
+                <button class="test-btn" id="testBtn" onclick="runConnectionTest()">Mulai Test</button>
+            </div>
+            <div id="testStatus" style="display: none; text-align: center; padding: 20px;">
+                <span>🔄 Mengukur koneksi...</span>
+            </div>
+            <div class="test-results" id="testResults" style="display: none;">
+                <div class="result-item">
+                    <div class="result-value" id="testPing">--</div>
+                    <div class="result-label">Ping (ms)</div>
+                </div>
+                <div class="result-item">
+                    <div class="result-value" id="testJitter">--</div>
+                    <div class="result-label">Jitter (ms)</div>
+                </div>
+                <div class="result-item">
+                    <div class="result-value" id="testPacketLoss">--</div>
+                    <div class="result-label">Packet Loss (%)</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Info Section -->
+        <div class="card info-section">
+            <h2 class="section-title">Tentang Pantau Ping</h2>
+            <p class="info-text">
+                Pantau Ping adalah dashboard monitoring real-time untuk latency dan packet loss dari berbagai ISP di Indonesia ke server game populer dan server kerja. Data ditampilkan secara transparan untuk membantu Anda memilih ISP terbaik sebelum berlangganan internet di rumah.
+            </p>
+            <div class="tags">
+                <span class="tag">Valorant</span>
+                <span class="tag">Mobile Legends</span>
+                <span class="tag">Genshin Impact</span>
+                <span class="tag">AWS</span>
+                <span class="tag">Cloudflare</span>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer>
+            <p>© 2024 Pantau Ping. Data disajikan untuk referensi.</p>
+        </footer>
+    </div>
+
+    <script>
+        // Data
+        const ISPs = [
+            { id: 'indihome', name: 'Indihome', color: '#FF6B35' },
+            { id: 'biznet', name: 'Biznet', color: '#0066CC' },
+            { id: 'firstmedia', name: 'First Media', color: '#E31C23' },
+            { id: 'xlhome', name: 'XL Home', color: '#009933' },
+            { id: 'myrepublic', name: 'MyRepublic', color: '#FF0066' },
+            { id: 'bolt', name: 'BOLT!', color: '#FFD700' },
+            { id: 'mncplay', name: 'MNC Play', color: '#0033CC' },
+        ];
+
+        const Servers = [
+            { id: 'valorant-sg', name: 'Valorant Singapore', type: 'game' },
+            { id: 'valorant-id', name: 'Valorant Indonesia', type: 'game' },
+            { id: 'mlbb-sg', name: 'Mobile Legends SG', type: 'game' },
+            { id: 'mlbb-id', name: 'Mobile Legends ID', type: 'game' },
+            { id: 'genshin-sg', name: 'Genshin Impact SG', type: 'game' },
+            { id: 'genshin-id', name: 'Genshin Impact ID', type: 'game' },
+            { id: 'aws-sg', name: 'AWS Singapore', type: 'work' },
+            { id: 'aws-id', name: 'AWS Indonesia', type: 'work' },
+            { id: 'cloudflare', name: 'Cloudflare', type: 'work' },
+            { id: 'google-dns', name: 'Google DNS', type: 'work' },
+        ];
+
+        let selectedISP = ISPs[0].name;
+        let selectedServer = Servers[0].name;
+        let serverType = 'game';
+        let pingChart = null;
+        let pingData = [];
+
+        // Generate mock data
+        function generateMockData() {
+            const data = [];
+            const now = Date.now();
+            
+            ISPs.forEach(isp => {
+                Servers.forEach(server => {
+                    for (let i = 0; i < 48; i++) {
+                        const timestamp = now - (48 - i) * 5 * 60 * 1000;
+                        let basePing = server.type === 'game' ? 25 : 20;
+                        basePing += Math.random() * 20;
+                        
+                        const ping = Math.round(basePing);
+                        const packetLoss = Math.random() < 0.05 ? Math.random() * 3 : 0;
+                        
+                        data.push({
+                            isp: isp.name,
+                            server: server.name,
+                            serverType: server.type,
+                            ping,
+                            packetLoss: Math.round(packetLoss * 100) / 100,
+                            timestamp
+                        });
+                    }
+                });
+            });
+            
+            return data;
+        }
+
+        // Initialize
+        function init() {
+            pingData = generateMockData();
+            renderISPButtons();
+            renderServerButtons();
+            updateChart();
+            updateStats();
+            
+            // Simulate real-time updates
+            setInterval(() => {
+                updatePingData();
+                updateChart();
+                updateStats();
+            }, 5000);
+        }
+
+        function renderISPButtons() {
+            const container = document.getElementById('ispButtons');
+            container.innerHTML = ISPs.map(isp => `
+                <button class="isp-btn ${isp.name === selectedISP ? 'active' : ''}" 
+                        style="background-color: ${isp.color}"
+                        onclick="selectISP('${isp.name}')">
+                    ${isp.name}
+                </button>
+            `).join('');
+        }
+
+        function renderServerButtons() {
+            const container = document.getElementById('serverGrid');
+            const filteredServers = Servers.filter(s => s.type === serverType);
+            container.innerHTML = filteredServers.map(server => `
+                <button class="server-btn ${server.name === selectedServer ? 'active' : ''}"
+                        onclick="selectServer('${server.name}')">
+                    ${server.name}
+                </button>
+            `).join('');
+        }
+
+        function selectISP(ispName) {
+            selectedISP = ispName;
+            renderISPButtons();
+            updateChart();
+            updateStats();
+        }
+
+        function selectServer(serverName) {
+            selectedServer = serverName;
+            renderServerButtons();
+            updateChart();
+            updateStats();
+        }
+
+        // Server type toggle
+        document.querySelectorAll('.toggle-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                serverType = btn.dataset.type;
+                
+                const firstServer = Servers.find(s => s.type === serverType);
+                if (firstServer) {
+                    selectedServer = firstServer.name;
+                }
+                
+                renderServerButtons();
+                updateChart();
+                updateStats();
+            });
+        });
+
+        function updatePingData() {
+            ISPs.forEach(isp => {
+                Servers.forEach(server => {
+                    const basePing = server.type === 'game' ? 25 : 20;
+                    const ping = Math.round(basePing + Math.random() * 20);
+                    const packetLoss = Math.random() < 0.05 ? Math.random() * 3 : 0;
+                    
+                    pingData.push({
+                        isp: isp.name,
+                        server: server.name,
+                        serverType: server.type,
+                        ping,
+                        packetLoss: Math.round(packetLoss * 100) / 100,
+                        timestamp: Date.now()
+                    });
+                });
+            });
+            
+            // Keep only last 1000 entries
+            pingData = pingData.slice(-1000);
+        }
+
+        function getFilteredData() {
+            return pingData
+                .filter(d => d.isp === selectedISP && d.server === selectedServer)
+                .slice(-48);
+        }
+
+        function updateChart() {
+            const filteredData = getFilteredData();
+            const labels = filteredData.map(d => {
+                const date = new Date(d.timestamp);
+                return date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+            });
+            const pingValues = filteredData.map(d => d.ping);
+            const packetLossValues = filteredData.map(d => d.packetLoss);
+
+            document.getElementById('chartTitle').textContent = `${selectedISP} → ${selectedServer}`;
+
+            const ctx = document.getElementById('pingChart').getContext('2d');
+            
+            if (pingChart) {
+                pingChart.destroy();
+            }
+
+            pingChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [
+                        {
+                            label: 'Ping (ms)',
+                            data: pingValues,
+                            borderColor: '#667eea',
+                            backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                            tension: 0.4,
+                            fill: true,
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: 'Packet Loss (%)',
+                            data: packetLossValues,
+                            borderColor: '#f5576c',
+                            backgroundColor: 'rgba(245, 87, 108, 0.1)',
+                            tension: 0.4,
+                            fill: true,
+                            yAxisID: 'y1'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    scales: {
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            title: {
+                                display: true,
+                                text: 'Ping (ms)'
+                            }
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            title: {
+                                display: true,
+                                text: 'Packet Loss (%)'
+                            },
+                            grid: {
+                                drawOnChartArea: false
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top'
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateStats() {
+            const filteredData = getFilteredData();
+            
+            if (filteredData.length > 0) {
+                const avgPing = Math.round(filteredData.reduce((sum, d) => sum + d.ping, 0) / filteredData.length);
+                const maxPing = Math.max(...filteredData.map(d => d.ping));
+                const avgPacketLoss = Math.round(filteredData.reduce((sum, d) => sum + d.packetLoss, 0) / filteredData.length * 100) / 100;
+                
+                document.getElementById('avgPing').textContent = `${avgPing}ms`;
+                document.getElementById('maxPing').textContent = `${maxPing}ms`;
+                document.getElementById('packetLoss').textContent = `${avgPacketLoss}%`;
+            }
+        }
+
+        function runConnectionTest() {
+            const testBtn = document.getElementById('testBtn');
+            const testStatus = document.getElementById('testStatus');
+            const testResults = document.getElementById('testResults');
+            
+            testBtn.disabled = true;
+            testBtn.textContent = 'Testing...';
+            testStatus.style.display = 'block';
+            testResults.style.display = 'none';
+            
+            setTimeout(() => {
+                const ping = Math.round(15 + Math.random() * 35);
+                const jitter = Math.round(Math.random() * 12 * 10) / 10;
+                const packetLoss = Math.round(Math.random() * 4 * 100) / 100;
+                
+                document.getElementById('testPing').textContent = `${ping}ms`;
+                document.getElementById('testJitter').textContent = `${jitter}ms`;
+                document.getElementById('testPacketLoss').textContent = `${packetLoss}%`;
+                
+                testBtn.disabled = false;
+                testBtn.textContent = 'Mulai Test';
+                testStatus.style.display = 'none';
+                testResults.style.display = 'grid';
+            }, 2000);
+        }
+
+        // Start the app
+        init();
+    </script>
+</body>
+</html>

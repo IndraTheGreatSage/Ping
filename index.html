@@ -416,7 +416,7 @@
             </div>
         </div>
 
-        <!-- Info Section -->
+       
         <div class="card info-section">
             <h2 class="section-title">Tentang Pantau Ping</h2>
             <p class="info-text">
@@ -431,7 +431,7 @@
             </div>
         </div>
 
-        <!-- Footer -->
+       
         <footer>
             <p>© 2024 Pantau Ping. Data disajikan untuk referensi.</p>
         </footer>
@@ -468,7 +468,7 @@
         let pingChart = null;
         let pingData = [];
 
-        // Real HTTP-based latency measurement
+        
         async function measureLatency(endpoint) {
             const start = performance.now();
             try {
@@ -480,11 +480,11 @@
                 const end = performance.now();
                 return Math.round(end - start);
             } catch (error) {
-                return null; // Failed to measure
+                return null; 
             }
         }
 
-        // Generate real data by measuring actual latency
+        
         async function generateRealData() {
             const data = [];
             const now = Date.now();
@@ -512,7 +512,7 @@
             return data;
         }
 
-        // Initialize
+        
         async function init() {
             pingData = await generateRealData();
             renderISPButtons();
@@ -520,7 +520,7 @@
             updateChart();
             updateStats();
             
-            // Real-time updates with actual measurements
+           
             setInterval(async () => {
                 await updatePingData();
                 updateChart();
@@ -564,7 +564,7 @@
             updateStats();
         }
 
-        // Server type toggle
+        
         document.querySelectorAll('.toggle-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
@@ -598,8 +598,8 @@
                     });
                 }
             }
+
             
-            // Keep only last 1000 entries
             pingData = pingData.slice(-1000);
         }
 
@@ -714,7 +714,7 @@
             testStatus.style.display = 'block';
             testResults.style.display = 'none';
             
-            // Measure latency to multiple endpoints
+            
             const endpoints = [
                 'https://www.google.com',
                 'https://cloudflare.com',
@@ -750,7 +750,7 @@
             testResults.style.display = 'grid';
         }
 
-        // Start the app
+        
         init();
     </script>
 </body>
